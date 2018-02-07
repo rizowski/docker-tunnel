@@ -1,0 +1,41 @@
+version: "3"
+
+services:
+  pia:
+    container_name: pia
+    image: itsdaspecialk/pia-openvpn
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun
+    networks:
+      - home
+    ports:
+      - 9090:9090
+    volumes:
+      - ~/configs/pia/auth.conf:/pia/auth.conf
+    command: '--auth-user-pass auth.conf'
+    dns:
+      - 209.222.18.218
+      - 209.222.18.222
+  http-vpn:
+    build: ./server
+    container_name: http-vpn
+    network_mode: service:pia
+    depends_on:
+      - pia
+    environment:
+      PORT: 9090
+  http:
+    build: ./server
+    container_name: plain-http
+    networks:
+      - home
+    environment:
+      PORT: 8080
+    ports:
+      - 8080:8080
+networks:
+  home:
+    driver: bridge
